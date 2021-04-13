@@ -10,7 +10,7 @@ with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines() if (len(r) > 0 and not r.startswith("#"))]
 
 setup(
-    name="napalm-skeleton",
+    name="napalm-imagestream",
     version="0.1.0",
     packages=find_packages(),
     author="David Barroso",
@@ -24,7 +24,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: MacOS',
     ],
-    url="https://github.com/napalm-automation/napalm-skeleton",
+    url="https://github.com/napalm-automation/napalm-imagestream",
     include_package_data=True,
     install_requires=reqs,
 )

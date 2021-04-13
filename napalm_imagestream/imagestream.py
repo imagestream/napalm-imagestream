@@ -14,7 +14,7 @@
 # the License.
 
 """
-Napalm driver for Skeleton.
+Napalm driver for ImageStream.
 
 Read https://napalm.readthedocs.io for more information.
 """
@@ -29,8 +29,8 @@ from napalm.base.exceptions import (
 )
 
 
-class SkeletonDriver(NetworkDriver):
-    """Napalm driver for Skeleton."""
+class ImageStreamDriver(NetworkDriver):
+    """Napalm driver for ImageStream."""
 
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
         """Constructor."""

@@ -1,4 +1,4 @@
-# napalm-skeleton
+# napalm-imagestream
 
 Congratulations! You are going to embark on an epic adventure that will bring you glory, fame and
 fortune.
@@ -21,20 +21,20 @@ drivers together.
 You can find more details regarding the [Community drivers guidelines](http://napalm.readthedocs.io/en/develop/contributing/drivers.html).
 1. Feel free to amend the Copyright holder.
 
-### Replacing the skeleton to the new repo
+### Replacing the imagestream to the new repo
 
 After cloning this repository, you can bootstrap a new repository for
-your driver using the following commands (keep `skeleton` as is, but
+your driver using the following commands (keep `imagestream` as is, but
 replace `newname` and `NewName` appropriately):
 
 ```sh
 git archive --prefix=napalm-newname/ HEAD | tar -C .. -xf -
 cd ../napalm-newname
-grep -rl skeleton | xargs sed -i"" s/skeleton/newname/g
-grep -rl Skeleton | xargs sed -i"" s/Skeleton/NewName/g
-for d in $(find . -type d -name '*skeleton*'); do mv $d ${d/skeleton/newname}; done
-for f in $(find . -type f -name '*skeleton*'); do mv $f ${f/skeleton/newname}; done
-for f in $(find . -type f -name '*Skeleton*'); do mv $f ${f/Skeleton/NewName}; done
+grep -rl imagestream | xargs sed -i"" s/imagestream/newname/g
+grep -rl ImageStream | xargs sed -i"" s/ImageStream/NewName/g
+for d in $(find . -type d -name '*imagestream*'); do mv $d ${d/imagestream/newname}; done
+for f in $(find . -type f -name '*imagestream*'); do mv $f ${f/imagestream/newname}; done
+for f in $(find . -type f -name '*ImageStream*'); do mv $f ${f/ImageStream/NewName}; done
 git init
 git add .
 ```
@@ -53,17 +53,17 @@ bring you the fame and fortune after all ;)
 
 ### The Driver
 
-All the code should be inside `napalm_skeleton`. You are free to organize your code as you want,
+All the code should be inside `napalm_imagestream`. You are free to organize your code as you want,
 however, there are some parts that have to be done in a certain way:
 
-* `napalm_skeleton/__init__.py` - That file should import your class driver. That's what the
+* `napalm_imagestream/__init__.py` - That file should import your class driver. That's what the
 dynamic importer will expect.
-* `napalm_skeleton/skeleton.py` - Here goes your driver.
-* `napalm_skeleton/templates/` - We use this folder to store templates used by the `load_template`
+* `napalm_imagestream/imagestream.py` - Here goes your driver.
+* `napalm_imagestream/templates/` - We use this folder to store templates used by the `load_template`
 method.
-* `napalm_skeleton/utils/` - For consistency with other repos we recommend putting your additional
+* `napalm_imagestream/utils/` - For consistency with other repos we recommend putting your additional
 code here. Helper functions or anything you want to keep out of the main driver file.
-* `napalm_skeleton/utils/textfsm_templates` - For consistency as well, we recommend keeping your
+* `napalm_imagestream/utils/textfsm_templates` - For consistency as well, we recommend keeping your
 `textfsm` templates here. We are planning to do some stuff around here so might have some common
 code that will assume they are there.
 * `MANIFEST.in` - If you need some additional support files that are not code, don't forget to add
@@ -77,8 +77,8 @@ Code for testing is inside the `test` folder.
   * `TestConfigDriver` - Tests for configuration management related methods.
   * `TestGetterDriver` - Tests for getters.
   * `FakeDevice` - Test double for your device.
-* `test/unit/skeleton/` - Here goes some configuration files that are used by `TestConfigDriver`.
-* `test/unit/skeleton/mock_data/` - Here goes files that contain mocked data used by
+* `test/unit/imagestream/` - Here goes some configuration files that are used by `TestConfigDriver`.
+* `test/unit/imagestream/mock_data/` - Here goes files that contain mocked data used by
                                     `TestGetterDriver`.
 
 #### Testing configuration management methods
