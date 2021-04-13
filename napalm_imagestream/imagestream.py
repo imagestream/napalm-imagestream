@@ -12,13 +12,17 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+#
+# ImageStream specific changes added by Joshua Snyder.
 
 """
-Napalm driver for ImageStream.
+Napalm driver for ImageStream Oputia.
 
 Read https://napalm.readthedocs.io for more information.
 """
 
+from netmiko import ConnectHandler
+from netmiko.ssh_exception import NetMikoTimeoutException
 from napalm.base import NetworkDriver
 from napalm.base.exceptions import (
     ConnectionException,
@@ -44,10 +48,22 @@ class ImageStreamDriver(NetworkDriver):
             optional_args = {}
 
     def open(self):
-        """Implement the NAPALM method open (mandatory)"""
-        pass
+        try:
+            self.device = ConnectHandler(device_type='linux',
+                                         host=self.hostname,
+                                         username=self.username,
+                                         password=self.password)
+        
+        except NetMikoTimeoutException:
+            raise ConnectionException('Cannot connect to {}'.format((self.hostname)))
 
 
     def close(self):
-        """Implement the NAPALM method close (mandatory)"""
-        pass
+        self.device.disconnect()
+
+    def get_config(self):
+        output = self.device.send_command('ubus call system board')    
+
+        return output
+
+        
