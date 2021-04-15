@@ -8,48 +8,8 @@ fortune.
 
 ## Instructions
 
-### Before starting
-
-1. Pick a name. Something that can easily identify which NOS you are supporting. From now on we will
-call it `SKELETON` so everytime you see `SKELETON` on this repo, replace it with the name you just
-picked.
-1. Let the `napalm` community know that you are planning to write a new driver. You can try reaching
-out on slack or on the mailing list. Someone will create a repo for you under the
-[`napalm-automation-community`](https://github.com/napalm-automation-community) organization. You
-can host your own driver if you prefer but we think it's more interesting if we can host all of the
-drivers together.
 You can find more details regarding the [Community drivers guidelines](http://napalm.readthedocs.io/en/develop/contributing/drivers.html).
 1. Feel free to amend the Copyright holder.
-
-### Replacing the imagestream to the new repo
-
-After cloning this repository, you can bootstrap a new repository for
-your driver using the following commands (keep `imagestream` as is, but
-replace `newname` and `NewName` appropriately):
-
-```sh
-git archive --prefix=napalm-newname/ HEAD | tar -C .. -xf -
-cd ../napalm-newname
-grep -rl imagestream | xargs sed -i"" s/imagestream/newname/g
-grep -rl ImageStream | xargs sed -i"" s/ImageStream/NewName/g
-for d in $(find . -type d -name '*imagestream*'); do mv $d ${d/imagestream/newname}; done
-for f in $(find . -type f -name '*imagestream*'); do mv $f ${f/imagestream/newname}; done
-for f in $(find . -type f -name '*ImageStream*'); do mv $f ${f/ImageStream/NewName}; done
-git init
-git add .
-```
-
-Alternatively, you can replace the first two commands by using the
-*Use this template* button in GitHub interface.
-
-### Fixing the `README.md` and `AUTHORS`
-
-1. Replace the occurrences on this file of `SKELETON`. Replace only the ones above
-the `CUTTING_LINE`. Don't bother about `pypi`, `travis`, etc. That will be taking care of later,
-after the first merge.
-1. Feel free to replace the content of AUTHORS as well and put yourself there. That's what will
-bring you the fame and fortune after all ;)
-1. Add any other useful information on the `README.md` file you think it's interesting.
 
 ### The Driver
 

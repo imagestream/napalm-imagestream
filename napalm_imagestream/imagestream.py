@@ -21,6 +21,8 @@ Napalm driver for ImageStream Oputia.
 Read https://napalm.readthedocs.io for more information.
 """
 
+import json
+
 from netmiko import ConnectHandler
 from netmiko.ssh_exception import NetMikoTimeoutException
 from napalm.base import NetworkDriver
@@ -66,4 +68,58 @@ class ImageStreamDriver(NetworkDriver):
 
         return output
 
-        
+    def is_alive(self):
+        return {
+            'is_alive': self.device.remote_conn.transport.is_active()
+        } 
+
+    def get_facts(self):     
+        facts = dict()
+
+        uptime = net_connect.send_command('awk \'{print $1}\' /proc/uptime')
+
+        facts['uptime'] = uptime
+
+        hardwareinfo = net_connect.send_command(' ubus call imagestream hardwareinfo')
+        """ 
+        Check to see if the hardwareinfo ubus call failed. 
+        This can fail if we have an old system, are running in a vm 
+        or this is a non-ImageStream openwrt device. If it worked, we will use the 
+        hardwareinfo values otherwise we will have to fake a serial number. 
+        """
+        if "Command failed" not in hardwareinfo:
+            hardwareinfo_json = json.loads(hardwareinfo)
+            facts['serial_number'] = hardwareinfo_json['serial_number']
+            facts['vendor'] = 'ImageStream Internet Solutions'
+            facts['model']  = hardwareinfo_json['product_id']
+    
+        if 'serial_number' not in facts:
+            facts['serial_number'] = '00000000' 
+
+        """ The system board call will give us the missing system values """
+        output = net_connect.send_command('ubus call system board')
+        output_json = json.loads(output)
+
+        facts['fqdn'] = output_json['hostname']
+        facts['hostname'] = output_json['hostname'].split('.')[0]
+        facts['os_version'] = output_json['release']['version'] + " " + output_json['release']['revision']
+        if 'vendor' not in facts:
+            facts['vendor'] = output_json['release']['manufacturer']
+
+        """ 
+        Get the Opuntia / Openwrt Interface list  
+        Note. This is the list of interfaces configured in the uci system and not the Linux interfaces that 
+        might be present at the kernel level. 
+        """
+        output = net_connect.send_command('ubus list network.interface.*')
+
+        interface_list = list()
+
+        for line in output.splitlines():
+            interface_list.append((line.split('.')[2]))
+
+        facts['interface_list'] = interface_list
+
+        return facts
+
+
