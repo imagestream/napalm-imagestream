@@ -76,11 +76,11 @@ class ImageStreamDriver(NetworkDriver):
     def get_facts(self):     
         facts = dict()
 
-        uptime = net_connect.send_command('awk \'{print $1}\' /proc/uptime')
+        uptime = self.device.send_command('awk \'{print $1}\' /proc/uptime')
 
         facts['uptime'] = uptime
 
-        hardwareinfo = net_connect.send_command(' ubus call imagestream hardwareinfo')
+        hardwareinfo = self.device.send_command(' ubus call imagestream hardwareinfo')
         """ 
         Check to see if the hardwareinfo ubus call failed. 
         This can fail if we have an old system, are running in a vm 
@@ -97,7 +97,7 @@ class ImageStreamDriver(NetworkDriver):
             facts['serial_number'] = '00000000' 
 
         """ The system board call will give us the missing system values """
-        output = net_connect.send_command('ubus call system board')
+        output = self.device.send_command('ubus call system board')
         output_json = json.loads(output)
 
         facts['fqdn'] = output_json['hostname']
@@ -111,7 +111,7 @@ class ImageStreamDriver(NetworkDriver):
         Note. This is the list of interfaces configured in the uci system and not the Linux interfaces that 
         might be present at the kernel level. 
         """
-        output = net_connect.send_command('ubus list network.interface.*')
+        output = self.device.send_command('ubus list network.interface.*')
 
         interface_list = list()
 
