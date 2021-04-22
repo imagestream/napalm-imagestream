@@ -6,6 +6,37 @@ fortune.
 > “Don't wish, Miss Tick had said. Do things.”
 > -- Terry Pratchett
 
+
+Completion status:
+- [ ] _send_command
+- [x] is_alive
+- [ ] load_replace_candidate
+- [ ] load_merge_candidate
+- [ ] compare_config - This device doesn't contain a builtin function for compare config.
+- [ ] commit_config
+- [ ] discard_config
+- [ ] rollback
+- [ ] get_optics
+- [ ] get_lldp_neighbors
+- [ ] get_lldp_neighbors_detail
+- [x] get_facts
+- [x] get_interfaces
+- [ ] get_interfaces_ip
+- [ ] get_interfaces_counters
+- [ ] get_environment
+- [x] get_arp_table
+- [ ] cli
+- [ ] get_ntp_peers (D-Link doesn't support this option)
+- [ ] get_ntp_servers
+- [ ] get_ntp_stats
+- [ ] get_mac_address_table
+- [ ] get_probes_config (D-Link doesn't support this option)
+- [ ] get_snmp_information
+- [ ] get_users
+- [ ] ping
+- [ ] traceroute
+- [x] get_config
+
 ## Instructions
 
 You can find more details regarding the [Community drivers guidelines](http://napalm.readthedocs.io/en/develop/contributing/drivers.html).

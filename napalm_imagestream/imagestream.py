@@ -13,7 +13,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 #
-# ImageStream specific changes added by Joshua Snyder.
+# Opuntia specific changes added by Joshua Snyder.
 
 """
 Napalm driver for ImageStream Oputia / OpenWrt.
@@ -22,6 +22,7 @@ Read https://napalm.readthedocs.io for more information.
 """
 
 import json
+import re
 
 from netmiko import ConnectHandler
 from netmiko.ssh_exception import NetMikoTimeoutException
@@ -81,7 +82,8 @@ class ImageStreamDriver(NetworkDriver):
             self.device = ConnectHandler(device_type='linux',
                                          host=self.hostname,
                                          username=self.username,
-                                         password=self.password)
+                                         password=self.password,
+                                         fast_cli=True)
         
         except NetMikoTimeoutException:
             raise ConnectionException('Cannot connect to {}'.format((self.hostname)))
@@ -91,7 +93,7 @@ class ImageStreamDriver(NetworkDriver):
         self.device.disconnect()
 
     def get_config(self):
-        output = self.device.send_command('ubus call system board')    
+        output = self.device.send_command('uci show')    
 
         return output
 
@@ -102,7 +104,7 @@ class ImageStreamDriver(NetworkDriver):
 
     # Opuntia / Openwrt may not have values for some items here we fill in keys that aren't already present
     # I kinda hate this... But I don't see any other choice. 
-    def _interfaceFillValues(interface):
+    def _interfaceFillValues(self, interface):
         # if we don't have an interface status set it down
         if "is_up" not in interface:
             interface['is_up'] = False
@@ -220,6 +222,11 @@ class ImageStreamDriver(NetworkDriver):
                         if s:
                             interface['speed'] = s[0]
                 
-            interfaces[interface_name] = _interfaceFillValues(interface)
+            interfaces[interface_name] = self._interfaceFillValues(interface)
 
         return interfaces
+
+    def get_interfaces_counters(self):
+         
+
+        return interfaces   
