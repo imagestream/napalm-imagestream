@@ -147,7 +147,7 @@ class ImageStreamDriver(NetworkDriver):
             hardwareinfo_json = json.loads(hardwareinfo)
             facts['serial_number'] = hardwareinfo_json['serial_number']
             facts['vendor'] = 'ImageStream Internet Solutions'
-            facts['model']  = hardwareinfo_json['product_id']
+            facts['model']  = hardwareinfo_json['product_id'] + " v" + hardwareinfo_json['product_rev']
     
         if 'serial_number' not in facts:
             facts['serial_number'] = '00000000' 
@@ -159,8 +159,13 @@ class ImageStreamDriver(NetworkDriver):
         facts['fqdn'] = output_json['hostname']
         facts['hostname'] = output_json['hostname'].split('.')[0]
         facts['os_version'] = output_json['release']['version'] + " " + output_json['release']['revision']
+        # If we didn't get the vendor or model number from the new hardwareinfo call, get it from the release file
+        # this isn't as good of source for this info
         if 'vendor' not in facts:
             facts['vendor'] = output_json['release']['manufacturer']
+        if 'model' not in facts:
+            facts['model'] = output_json['release']['product'] + " v" + output_json['release']['hwrev']
+
 
         """ 
         Get the Opuntia / Openwrt Interface list  
@@ -226,7 +231,43 @@ class ImageStreamDriver(NetworkDriver):
 
         return interfaces
 
+    def get_arp_table(self):
+        """ 
+        This seems simple but due to the way Opuntia / Openwrt has interfaces and Linux Interfaces this 
+        complicates the interface that we return for each Linux arp entry. Since it's possible in a few 
+        cases to have an Opuntia Interface bind to the same Linux device (Proto Dhcp & Dhcpv6 for example)
+        I think it's best to return what is effectivly the same arp Entry for each Opuntia interface. 
+        """
+        raw_interfaces = self.device.send_command('ubus list network.interface.*')
+        for line in raw_interfaces.splitlines():
+            interface_name = line.split('.')[2]
+
+    def _get_interfaces_protocol(self):
+        """
+        Opuntia intefaces can have many different protocol types so it's useful to be able to get these also
+        Hence this private function.
+        """
+        interfaces_proto = dict()
+
+        raw_interfaces = self.device.send_command('ubus list network.interface.*')
+        for line in raw_interfaces.splitlines():
+            interface_name = line.split('.')[2]
+
+            status = self.device.send_command('ubus call ' + line + ' status')
+            status_json = json.loads(status)
+
+            if "proto" in status_json:
+                interfaces_proto[interface_name] = status_json['proto']
+
+        return interfaces_proto
+
+
+    def get_interfaces_ip(self):
+        return True
+
+
+
     def get_interfaces_counters(self):
          
 
-        return interfaces   
+        return True   

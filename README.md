@@ -11,11 +11,11 @@ Completion status:
 - [x] is_alive
 - [ ] load_replace_candidate
 - [ ] load_merge_candidate
-- [ ] compare_config - This device doesn't contain a builtin function for compare config.
+- [ ] compare_config 
 - [ ] commit_config
 - [ ] discard_config
 - [ ] rollback
-- [ ] get_optics
+- [ ] get_optics - not applicable in most of our equipment
 - [ ] get_lldp_neighbors
 - [ ] get_lldp_neighbors_detail
 - [x] get_facts
@@ -30,6 +30,7 @@ Completion status:
 - [ ] get_ntp_stats
 - [ ] get_mac_address_table
 - [ ] get_probes_config 
+- [ ] get_probes_results
 - [ ] get_snmp_information
 - [ ] get_users
 - [ ] ping
