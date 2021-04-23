@@ -26,11 +26,11 @@ Completion status:
 - [ ] get_environment
 - [x] get_arp_table
 - [ ] cli
-- [ ] get_ntp_peers (D-Link doesn't support this option)
+- [ ] get_ntp_peers 
 - [ ] get_ntp_servers
 - [ ] get_ntp_stats
 - [ ] get_mac_address_table
-- [ ] get_probes_config (D-Link doesn't support this option)
+- [ ] get_probes_config 
 - [ ] get_snmp_information
 - [ ] get_users
 - [ ] ping
