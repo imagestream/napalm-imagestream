@@ -8,7 +8,6 @@ fortune.
 
 
 Completion status:
-- [ ] _send_command
 - [x] is_alive
 - [ ] load_replace_candidate
 - [ ] load_merge_candidate
