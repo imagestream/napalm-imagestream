@@ -24,6 +24,7 @@ Completion status:
 - [ ] get_interfaces_counters
 - [ ] get_environment
 - [x] get_arp_table
+- [ ] get_ipv6_neighbors_table
 - [ ] cli
 - [ ] get_ntp_peers 
 - [ ] get_ntp_servers
