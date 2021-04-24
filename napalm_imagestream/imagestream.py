@@ -245,6 +245,31 @@ class ImageStreamDriver(NetworkDriver):
         v4_neigh = self.device.send_command('ip -4 neigh')
 
         raw_interfaces = self.device.send_command('ubus list network.interface.*')
+
+        """
+        Loop through the Opuntia interfaces and determine the kernel device that each one is bound to. 
+        We reference this when we create the arp_table. 
+        """
+        kernel_dev = dict()
+        for line in raw_interfaces.splitlines():
+            interface_name = line.split('.')[2]
+
+            status = self.device.send_command('ubus call ' + line + ' status')
+            status_json = json.loads(status)
+            
+            # check if our Opuntia protocol is dhcpv6. If so we won't return anything for this Interface
+            # This check removes most situations where more than one Opuntia / OpenWrt Interface is bound 
+            # a single base linux device.
+            if status_json['proto'] == "dhcpv6":
+                    continue
+
+            if "l3_device" in status_json or "device" in status_json: 
+                if "l3_device" in status_json:
+                    dev = status_json['l3_device']
+                else:
+                    dev = status_json['device']
+
+            kernel_dev[interface_name] = dev  
         
         for arp in v4_neigh.splitlines():
             arp_entry = arp.split()
@@ -255,31 +280,13 @@ class ImageStreamDriver(NetworkDriver):
                     mac_address = "00:00:00:00:00:00"
                 else:
                     mac_address = arp_entry[4]
-
-                for line in raw_interfaces.splitlines():
-                    interface_name = line.split('.')[2]
-
-                    status = self.device.send_command('ubus call ' + line + ' status')
-                    status_json = json.loads(status)
-
-                    if "l3_device" in status_json or "device" in status_json: 
-                        if "l3_device" in status_json:
-                            kernel_dev = status_json['l3_device']
-                        else:
-                            kernel_dev = status_json['device']
-                    else: # We don't seem to have a Linux device for this Oputia device: this shouldn't happen but bail if it does
-                        continue  
-
-                    # check if our Opuntia protocol is dhcpv6. If so we won't return anything for this Interface
-                    # This check removes most situations where more than one Opuntia / OpenWrt Interface is bound 
-                    # a single base linux device.
-                    if status_json['proto'] == "dhcpv6":
-                        continue
-                    # We now check if the Opuntia / Openwrt interface is the same as the linux interface
-                    # Linux doesn't keep ages so always set that to 0. 
-                    if kernel_dev in linux_dev:
+                
+                # We now check if the Opuntia / Openwrt interface is the same as the linux interface
+                # Linux doesn't keep ages so always set that to 0. 
+                for opunita_dev in kernel_dev:
+                    if kernel_dev[opunita_dev] in linux_dev:
                         arp_dict = dict()
-                        arp_dict['interface'] = interface_name
+                        arp_dict['interface'] = opunita_dev
                         arp_dict['mac'] = mac_address.upper()
                         arp_dict['ip'] = ipv4
                         arp_dict['age'] = 0
@@ -300,6 +307,28 @@ class ImageStreamDriver(NetworkDriver):
 
         raw_interfaces = self.device.send_command('ubus list network.interface.*')
         
+        kernel_dev = dict()
+        for line in raw_interfaces.splitlines():
+            interface_name = line.split('.')[2]
+
+            status = self.device.send_command('ubus call ' + line + ' status')
+            status_json = json.loads(status)
+            
+            # check if our Opuntia protocol is dhcp. If so we won't return anything for this Interface 
+            # since we are looking for ipv6 neighbor entries. 
+            # This check removes most situations where more than one Opuntia / OpenWrt Interface is bound 
+            # a single base linux device.
+            if status_json['proto'] == "dhcp":
+                    continue
+
+            if "l3_device" in status_json or "device" in status_json: 
+                if "l3_device" in status_json:
+                    dev = status_json['l3_device']
+                else:
+                    dev = status_json['device']
+
+            kernel_dev[interface_name] = dev  
+
         for arp in v6_neigh.splitlines():
             arp_entry = arp.split()
             if len(arp_entry) > 0:
@@ -310,30 +339,12 @@ class ImageStreamDriver(NetworkDriver):
                 else:
                     mac_address = arp_entry[4]
 
-                for line in raw_interfaces.splitlines():
-                    interface_name = line.split('.')[2]
-
-                    status = self.device.send_command('ubus call ' + line + ' status')
-                    status_json = json.loads(status)
-
-                    if "l3_device" in status_json or "device" in status_json: 
-                        if "l3_device" in status_json:
-                            kernel_dev = status_json['l3_device']
-                        else:
-                            kernel_dev = status_json['device']
-                    else: # We don't seem to have a Linux device for this Oputia device: this shouldn't happen but bail if it does
-                        continue  
-
-                    # check if our Opuntia protocol is dhcp. If so we won't return anything for this Interface
-                    # This check removes most situations where more than one Opuntia / OpenWrt Interface is bound 
-                    # a single base linux device.
-                    if status_json['proto'] == "dhcp":
-                        continue
-                    # We now check if the Opuntia / Openwrt interface is the same as the linux interface
-                    # Linux doesn't keep ages so always set that to 0. 
-                    if kernel_dev in linux_dev:
+                # We now check if the Opuntia / Openwrt interface is the same as the linux interface
+                # Linux doesn't keep ages so always set that to 0. 
+                for opunita_dev in kernel_dev:
+                    if kernel_dev[opunita_dev] in linux_dev:
                         arp_dict = dict()
-                        arp_dict['interface'] = interface_name
+                        arp_dict['interface'] = opunita_dev
                         arp_dict['mac'] = mac_address.upper()
                         arp_dict['ip'] = ipv6
                         arp_dict['age'] = 0
