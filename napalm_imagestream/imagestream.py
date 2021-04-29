@@ -353,7 +353,6 @@ class ImageStreamDriver(NetworkDriver):
 
         return ipv6_neighbors_table        
 
-
     def _get_interfaces_protocol(self):
         """
         Opuntia intefaces can have many different protocol types so it's useful to be able to get these also
@@ -373,13 +372,60 @@ class ImageStreamDriver(NetworkDriver):
 
         return interfaces_proto
 
-
     def get_interfaces_ip(self):
-        return True
+        """
+        Netifd under Opuntia / OpenWrt tracks addresses in a few different ways. Ipv4 is easy, there is a list of Ipv4 
+        addresses and that's that. But Ipv6 it tracks if you have a address set or if you got a prefix assigned to 
+        the interface. And confusingly it then refers to the assigned network as "address" and the actuall address as
+        "local-address" most of the logic below is to parse this out.  
+        """
+        interfaces_ip = dict()
 
+        raw_interfaces = self.device.send_command('ubus list network.interface.*')
+        for line in raw_interfaces.splitlines():
+            ipv4 = dict()
+            ipv6 = dict()
+        
+            interface_name = line.split('.')[2]
+
+            status = self.device.send_command('ubus call ' + line + ' status')
+            status_json = json.loads(status)
+            
+            if "ipv4-address" in status_json.keys() and status_json["ipv4-address"] :
+                for i in range(len(status_json["ipv4-address"])):
+                    if "address" in status_json["ipv4-address"][i]:
+                        ip = dict()
+                        mask = dict()
+                        mask["prefix_length"] = status_json["ipv4-address"][i]["mask"]
+                        ip[status_json["ipv4-address"][i]["address"]] = mask
+                        ipv4.update(ip)
+
+            if "ipv6-address" in status_json.keys() and status_json["ipv6-address"]:
+                for i in range(len(status_json["ipv6-address"])):
+                    if "address" in status_json["ipv6-address"][i]:
+                        ip = dict()
+                        mask = dict()
+                        mask["prefix_length"] = status_json["ipv6-address"][i]["mask"]
+                        ip[status_json["ipv6-address"][i]["address"]] = mask
+                        ipv6.update(ip)
+        
+            if "ipv6-prefix-assignment" in status_json.keys() and status_json["ipv6-prefix-assignment"]:
+                for i in range(len(status_json["ipv6-prefix-assignment"])):
+                    if "local-address" in status_json["ipv6-prefix-assignment"][i]:
+                        ip = dict()
+                        mask = dict()
+                        mask["prefix_length"] = status_json["ipv6-prefix-assignment"][i]["local-address"]["mask"]
+                        ip[status_json["ipv6-prefix-assignment"][i]["local-address"]["address"]] = mask
+                        ipv6.update(ip)
+
+            interfaces_ip[interface_name] = dict()
+            interfaces_ip[interface_name]["ipv4"] = dict()
+            interfaces_ip[interface_name]["ipv6"] = dict()
+            interfaces_ip[interface_name]["ipv4"].update(ipv4)
+            interfaces_ip[interface_name]["ipv6"].update(ipv6)
+
+        return interfaces_ip
 
 
     def get_interfaces_counters(self):
-         
-
         return True   

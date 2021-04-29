@@ -20,7 +20,7 @@ Completion status:
 - [ ] get_lldp_neighbors_detail
 - [x] get_facts
 - [x] get_interfaces
-- [ ] get_interfaces_ip
+- [x] get_interfaces_ip
 - [ ] get_interfaces_counters
 - [ ] get_environment
 - [x] get_arp_table
