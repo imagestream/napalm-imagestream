@@ -428,7 +428,64 @@ class ImageStreamDriver(NetworkDriver):
 
 
     def get_interfaces_counters(self):
-        return True   
+        """
+        Since the statistics Opuntia / OpenWrt keeps slightly different statistics, I need to map values 
+        into the Napalm Schema. Sadly we have alot more data on the Opuntia side but most of it doesn't 
+        fit into this schema. And we are lacking info on broadcast packets so...  
+
+        Napalm                              Opuntia / OpenWrt
+        tx_errors               :           tx_errors
+        rx_errors               :           rx_errors
+        tx_discards             :           tx_dropped
+        rx_discards             :           rx_dropped
+        tx_octets               :           tx_bytes
+        rx_octets               :           rx_bytes
+        tx_unicast_packets      :           tx_packets
+        rx_unicast_packets      :           rx_packets
+        tx_muliticast_packets   :           N/A 
+        rx_muliticast_packets   :           multicast
+        tx_broadcast_packets    :           N/A
+        rx_broadcast_packets    :           N/A
+
+        """
+        interfaces_counters = dict()
+
+        # This gets us ALL of the interface counters at the linux level for all devices
+        linux_counters_raw = self.device.send_command('ubus call network.device status \' { "none" : "none" } \'')
+        linux_counters = json.loads(linux_counters_raw)
+
+        raw_interfaces = self.device.send_command('ubus list network.interface.*')
+        for line in raw_interfaces.splitlines():
+            interface_name = line.split('.')[2]
+
+            status = self.device.send_command('ubus call ' + line + ' status')
+            status_json = json.loads(status)
+
+            if status_json['available'] is True:
+                if "l3_device" in status_json or "device" in status_json: 
+                    if "l3_device" in status_json:
+                        kernel_dev = status_json['l3_device']
+                    else:
+                        kernel_dev = status_json['device']   
+
+            if kernel_dev is not None:
+                if linux_counters[kernel_dev]["statistics"]:
+                    stats = dict()
+                    stats["tx_errors"] = linux_counters[kernel_dev]["statistics"]["tx_errors"]
+                    stats["rx_errors"] = linux_counters[kernel_dev]["statistics"]["rx_errors"]
+                    stats["tx_discards"] = linux_counters[kernel_dev]["statistics"]["tx_dropped"]
+                    stats["rx_discards"] = linux_counters[kernel_dev]["statistics"]["rx_dropped"]
+                    stats["tx_octets"] = linux_counters[kernel_dev]["statistics"]["tx_bytes"]
+                    stats["rx_octets"] = linux_counters[kernel_dev]["statistics"]["rx_bytes"]
+                    stats["tx_unicast_packets"] = linux_counters[kernel_dev]["statistics"]["tx_packets"]
+                    stats["rx_unicast_packets"] = linux_counters[kernel_dev]["statistics"]["rx_packets"]
+                    stats["tx_muliticast_packets"] = 0
+                    stats["rx_muliticast_packets"] = linux_counters[kernel_dev]["statistics"]["multicast"]
+                    stats["tx_broadcast_packets"] = 0
+                    stats["rx_broadcast_packets"] = 0
+                    interfaces_counters[interface_name] = stats           
+
+        return interfaces_counters
 
     def load_merge_candidate(self, filename=None, config=None):
         if not filename and not config:

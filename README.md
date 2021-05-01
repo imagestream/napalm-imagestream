@@ -19,9 +19,10 @@ Completion status:
 - [ ] get_lldp_neighbors
 - [ ] get_lldp_neighbors_detail
 - [x] get_facts
+- [ ] get_firewall_policies
 - [x] get_interfaces
 - [x] get_interfaces_ip
-- [ ] get_interfaces_counters
+- [x] get_interfaces_counters
 - [ ] get_environment
 - [x] get_arp_table
 - [x] get_ipv6_neighbors_table
@@ -34,6 +35,7 @@ Completion status:
 - [ ] get_probes_results
 - [ ] get_snmp_information
 - [ ] get_users
+- [ ] get_vlans
 - [ ] ping
 - [ ] traceroute
 - [x] get_config
