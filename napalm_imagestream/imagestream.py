@@ -429,3 +429,40 @@ class ImageStreamDriver(NetworkDriver):
 
     def get_interfaces_counters(self):
         return True   
+
+    def load_merge_candidate(self, filename=None, config=None):
+        if not filename and not config:
+            raise MergeConfigException('filename or config must be provided')
+        
+        self.loaded = True
+
+        if filename is not None:
+            with open(filename, 'r') as f:
+                candidate = f.readlines()
+        else:
+            candidate = config
+
+        if not isinstance(candidate, list):
+            candidate = [candidate]
+
+        candidate = [line for line in candidate if line]
+        for uci_command in candidate:
+            output = self.send_command(uci_command)
+            if "error" in output or "not found" in output:
+                raise MergeConfigException("Uci Command '{0}' cannot be applied.".format(uci_command))
+
+    def discard_config(self):
+        if self.loaded:
+            self.send_command('uci revert')        
+
+    def compare_config(self):
+        if self.loaded:
+            diff = self.send_command('uci changes')
+            return diff
+        return ''
+
+    def commit_config(self):
+        if self.loaded:
+            self.send_command('uci commit')
+            self.changed = True
+            self.loaded = False              
