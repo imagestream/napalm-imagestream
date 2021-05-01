@@ -188,6 +188,10 @@ class ImageStreamDriver(NetworkDriver):
 
         output = self.device.send_command('ubus list network.interface.*')
 
+        # This gets us ALL of the interface counters at the linux level for all devices
+        dev_status = self.device.send_command('ubus call network.device status \' { "none" : "none" } \'')
+        dev_status_json = json.loads(dev_status)
+
         for line in output.splitlines():
             interface = {}
             status = self.device.send_command('ubus call ' + line + ' status')
@@ -212,20 +216,17 @@ class ImageStreamDriver(NetworkDriver):
                     else:
                         kernel_dev = status_json['device']    
 
-                    # since we have the kernel device we can get detailed stats from netifd
-                    dev_status = self.device.send_command('ubus call network.device status \'{ "name": "' + kernel_dev + '" }\'')
-                    dev_status_json = json.loads(dev_status)
-
-                    if "mtu" in dev_status_json:
-                        interface['mtu'] = dev_status_json['mtu']
-                    
-                    if "macaddr" in dev_status_json:    
-                        interface['mac_address'] = dev_status_json['macaddr'].upper()
-                    
-                    if "speed" in dev_status_json:
-                        s = re.findall('^[ 0-9]+', dev_status_json['speed'])
-                        if s:
-                            interface['speed'] = s[0]
+            if kernel_dev is not None:        
+                if "mtu" in dev_status_json:
+                    interface['mtu'] = dev_status_json[kernel_dev]['mtu']
+                
+                if "macaddr" in dev_status_json:    
+                    interface['mac_address'] = dev_status_json[kernel_dev]['macaddr'].upper()
+                
+                if "speed" in dev_status_json:
+                    s = re.findall('^[ 0-9]+', dev_status_json[kernel_dev]['speed'])
+                    if s:
+                        interface['speed'] = s[0]
                 
             interfaces[interface_name] = self._interfaceFillValues(interface)
 
