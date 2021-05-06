@@ -130,7 +130,7 @@ class ImageStreamDriver(NetworkDriver):
         return interface                      
 
     def get_facts(self):     
-        facts = dict()
+        facts = {}
 
         uptime = self.device.send_command('awk \'{print $1}\' /proc/uptime')
 
@@ -184,21 +184,21 @@ class ImageStreamDriver(NetworkDriver):
         return facts
 
     def get_interfaces(self):
-        interfaces = dict()
+        interfaces = {}
 
         output = self.device.send_command('ubus list network.interface.*')
 
-        # This gets us ALL of the interface counters at the linux level for all devices
+        # This gets us ALL of the interface stats at the linux level for all devices
         dev_status = self.device.send_command('ubus call network.device status \' { "none" : "none" } \'')
         dev_status_json = json.loads(dev_status)
 
         for line in output.splitlines():
             interface = {}
-            status = self.device.send_command('ubus call ' + line + ' status')
-            status_json = json.loads(status)
-
             # Gives us the interface name 
             interface_name = line.split('.')[2]
+
+            status = self.device.send_command('ubus call ' + line + ' status')
+            status_json = json.loads(status)
 
             # Check a few basic items and set them if present
             if "up" in status_json:
@@ -217,13 +217,11 @@ class ImageStreamDriver(NetworkDriver):
                         kernel_dev = status_json['device']    
 
             if kernel_dev is not None:        
-                if "mtu" in dev_status_json:
-                    interface['mtu'] = dev_status_json[kernel_dev]['mtu']
-                
-                if "macaddr" in dev_status_json:    
-                    interface['mac_address'] = dev_status_json[kernel_dev]['macaddr'].upper()
-                
-                if "speed" in dev_status_json:
+                if "mtu" in dev_status_json[kernel_dev]:
+                    interface['mtu'] = dev_status_json[kernel_dev]['mtu']          
+                if "macaddr" in dev_status_json[kernel_dev]:    
+                    interface['mac_address'] = dev_status_json[kernel_dev]['macaddr'].upper()              
+                if "speed" in dev_status_json[kernel_dev]:
                     s = re.findall('^[ 0-9]+', dev_status_json[kernel_dev]['speed'])
                     if s:
                         interface['speed'] = s[0]
@@ -251,7 +249,7 @@ class ImageStreamDriver(NetworkDriver):
         Loop through the Opuntia interfaces and determine the kernel device that each one is bound to. 
         We reference this when we create the arp_table. 
         """
-        kernel_dev = dict()
+        kernel_dev = {}
         for line in raw_interfaces.splitlines():
             interface_name = line.split('.')[2]
 
@@ -286,7 +284,7 @@ class ImageStreamDriver(NetworkDriver):
                 # Linux doesn't keep ages so always set that to 0. 
                 for opunita_dev in kernel_dev:
                     if kernel_dev[opunita_dev] in linux_dev:
-                        arp_dict = dict()
+                        arp_dict = {}
                         arp_dict['interface'] = opunita_dev
                         arp_dict['mac'] = mac_address.upper()
                         arp_dict['ip'] = ipv4
@@ -308,7 +306,7 @@ class ImageStreamDriver(NetworkDriver):
 
         raw_interfaces = self.device.send_command('ubus list network.interface.*')
         
-        kernel_dev = dict()
+        kernel_dev = {}
         for line in raw_interfaces.splitlines():
             interface_name = line.split('.')[2]
 
@@ -344,12 +342,11 @@ class ImageStreamDriver(NetworkDriver):
                 # Linux doesn't keep ages so always set that to 0. 
                 for opunita_dev in kernel_dev:
                     if kernel_dev[opunita_dev] in linux_dev:
-                        arp_dict = dict()
+                        arp_dict = {}
                         arp_dict['interface'] = opunita_dev
                         arp_dict['mac'] = mac_address.upper()
                         arp_dict['ip'] = ipv6
                         arp_dict['age'] = 0
-
                         ipv6_neighbors_table.append(arp_dict)
 
         return ipv6_neighbors_table        
@@ -359,7 +356,7 @@ class ImageStreamDriver(NetworkDriver):
         Opuntia intefaces can have many different protocol types so it's useful to be able to get these also
         Hence this private function.
         """
-        interfaces_proto = dict()
+        interfaces_proto = {}
 
         raw_interfaces = self.device.send_command('ubus list network.interface.*')
         for line in raw_interfaces.splitlines():
@@ -380,12 +377,12 @@ class ImageStreamDriver(NetworkDriver):
         the interface. And confusingly it then refers to the assigned network as "address" and the actuall address as
         "local-address" most of the logic below is to parse this out.  
         """
-        interfaces_ip = dict()
+        interfaces_ip = {}
 
         raw_interfaces = self.device.send_command('ubus list network.interface.*')
         for line in raw_interfaces.splitlines():
-            ipv4 = dict()
-            ipv6 = dict()
+            ipv4 = {}
+            ipv6 = {}
         
             interface_name = line.split('.')[2]
 
@@ -395,8 +392,8 @@ class ImageStreamDriver(NetworkDriver):
             if "ipv4-address" in status_json.keys() and status_json["ipv4-address"] :
                 for i in range(len(status_json["ipv4-address"])):
                     if "address" in status_json["ipv4-address"][i]:
-                        ip = dict()
-                        mask = dict()
+                        ip = {}
+                        mask = {}
                         mask["prefix_length"] = status_json["ipv4-address"][i]["mask"]
                         ip[status_json["ipv4-address"][i]["address"]] = mask
                         ipv4.update(ip)
@@ -404,8 +401,8 @@ class ImageStreamDriver(NetworkDriver):
             if "ipv6-address" in status_json.keys() and status_json["ipv6-address"]:
                 for i in range(len(status_json["ipv6-address"])):
                     if "address" in status_json["ipv6-address"][i]:
-                        ip = dict()
-                        mask = dict()
+                        ip = {}
+                        mask = {}
                         mask["prefix_length"] = status_json["ipv6-address"][i]["mask"]
                         ip[status_json["ipv6-address"][i]["address"]] = mask
                         ipv6.update(ip)
@@ -413,15 +410,15 @@ class ImageStreamDriver(NetworkDriver):
             if "ipv6-prefix-assignment" in status_json.keys() and status_json["ipv6-prefix-assignment"]:
                 for i in range(len(status_json["ipv6-prefix-assignment"])):
                     if "local-address" in status_json["ipv6-prefix-assignment"][i]:
-                        ip = dict()
-                        mask = dict()
+                        ip = {}
+                        mask = {}
                         mask["prefix_length"] = status_json["ipv6-prefix-assignment"][i]["local-address"]["mask"]
                         ip[status_json["ipv6-prefix-assignment"][i]["local-address"]["address"]] = mask
                         ipv6.update(ip)
 
-            interfaces_ip[interface_name] = dict()
-            interfaces_ip[interface_name]["ipv4"] = dict()
-            interfaces_ip[interface_name]["ipv6"] = dict()
+            interfaces_ip[interface_name] = {}
+            interfaces_ip[interface_name]["ipv4"] = {}
+            interfaces_ip[interface_name]["ipv6"] = {}
             interfaces_ip[interface_name]["ipv4"].update(ipv4)
             interfaces_ip[interface_name]["ipv6"].update(ipv6)
 
@@ -449,9 +446,9 @@ class ImageStreamDriver(NetworkDriver):
         rx_broadcast_packets    :           N/A
 
         """
-        interfaces_counters = dict()
+        interfaces_counters = {}
 
-        # This gets us ALL of the interface counters at the linux level for all devices
+        # This gets us ALL of the interface counters at the linux kernal level for all devices
         linux_counters_raw = self.device.send_command('ubus call network.device status \' { "none" : "none" } \'')
         linux_counters = json.loads(linux_counters_raw)
 
@@ -471,7 +468,7 @@ class ImageStreamDriver(NetworkDriver):
 
             if kernel_dev is not None:
                 if linux_counters[kernel_dev]["statistics"]:
-                    stats = dict()
+                    stats = {}
                     stats["tx_errors"] = linux_counters[kernel_dev]["statistics"]["tx_errors"]
                     stats["rx_errors"] = linux_counters[kernel_dev]["statistics"]["rx_errors"]
                     stats["tx_discards"] = linux_counters[kernel_dev]["statistics"]["tx_dropped"]
