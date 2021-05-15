@@ -158,14 +158,14 @@ class ImageStreamDriver(NetworkDriver):
 
         facts['fqdn'] = output_json['hostname']
         facts['hostname'] = output_json['hostname'].split('.')[0]
-        facts['os_version'] = output_json['release']['version'] + " " + output_json['release']['revision']
-        # If we didn't get the vendor or model number from the new hardwareinfo call, get it from the release file
-        # this isn't as good of source for this info
-        if 'vendor' not in facts:
-            facts['vendor'] = output_json['release']['manufacturer']
-        if 'model' not in facts:
-            facts['model'] = output_json['release']['product'] + " v" + output_json['release']['hwrev']
-
+        if 'release' in output_json:
+            facts['os_version'] = output_json['release']['version'] + " " + output_json['release']['revision']
+            # If we didn't get the vendor or model number from the new hardwareinfo call, get it from the release file
+            # this isn't as good of source for this info
+            if 'vendor' not in facts:
+                facts['vendor'] = output_json['release']['manufacturer']
+            if 'model' not in facts:
+                facts['model'] = output_json['release']['product'] + " v" + output_json['release']['hwrev']
 
         """ 
         Get the Opuntia / Openwrt Interface list  
