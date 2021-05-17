@@ -93,9 +93,11 @@ class ImageStreamDriver(NetworkDriver):
         self.device.disconnect()
 
     def get_config(self):
-        output = self.device.send_command('uci show')    
+        config = {}
 
-        return output
+        config['running'] = self.device.send_command('uci show')    
+
+        return config
 
     def is_alive(self):
         return {
@@ -130,6 +132,14 @@ class ImageStreamDriver(NetworkDriver):
         return interface                      
 
     def get_facts(self):     
+        """ 
+        Get Facts has complicated logic around vendor, model and serial_numbers. Sadly even in inside 
+        ImageStream hardware there have been several different ways this has been stored. For more 
+        generic OpenWrt, the situation is even worse. I don't think most systems can even get a 
+        serial number from the software stack. 
+
+        We check an ImageStream Specific call first otherwise we have to make some guesses. 
+        """
         facts = {}
 
         uptime = self.device.send_command('awk \'{print $1}\' /proc/uptime')
@@ -137,46 +147,40 @@ class ImageStreamDriver(NetworkDriver):
         facts['uptime'] = uptime
 
         hardwareinfo = self.device.send_command('ubus call imagestream hardwareinfo')
-        """ 
-        Check to see if the hardwareinfo ubus call failed. 
-        This can fail if we have an old system, are running in a vm 
-        or this is a non-ImageStream openwrt device. If it worked, we will use the 
-        hardwareinfo values otherwise we will have to fake a serial number. 
-        """
+        
         if "Command failed" not in hardwareinfo:
             hardwareinfo_json = json.loads(hardwareinfo)
             facts['serial_number'] = hardwareinfo_json['serial_number']
-            facts['vendor'] = 'ImageStream Internet Solutions'
+            facts['vendor'] = hardwareinfo_json['release']['manufacturer']
             facts['model']  = hardwareinfo_json['product_id'] + " v" + hardwareinfo_json['product_rev']
     
         if 'serial_number' not in facts:
             facts['serial_number'] = '00000000' 
 
-        """ The system board call will give us the missing system values """
-        output = self.device.send_command('ubus call system board')
-        output_json = json.loads(output)
+        # The system board call may give us the missing system values
+        system_board = self.device.send_command('ubus call system board')
+        system_board_json = json.loads(system_board)
 
-        facts['fqdn'] = output_json['hostname']
-        facts['hostname'] = output_json['hostname'].split('.')[0]
-        if 'release' in output_json:
-            facts['os_version'] = output_json['release']['version'] + " " + output_json['release']['revision']
-            # If we didn't get the vendor or model number from the new hardwareinfo call, get it from the release file
-            # this isn't as good of source for this info
-            if 'vendor' not in facts:
-                facts['vendor'] = output_json['release']['manufacturer']
-            if 'model' not in facts:
-                facts['model'] = output_json['release']['product'] + " v" + output_json['release']['hwrev']
+        if 'fqdn' not in facts:
+            facts['fqdn'] = system_board_json['hostname']
+        if 'hostname' not in facts:    
+            facts['hostname'] = system_board_json['hostname'].split('.')[0]
+        if 'os_version' not in facts:   
+            if 'release' in system_board_json:
+                facts['os_version'] = system_board_json['release']['version'] + " " + system_board_json['release']['revision']
+        if 'vendor' not in facts:
+            if "manufacturer" in system_board_json['release'].keys() and system_board_json['release']['manufacturer']:
+                facts['vendor'] = system_board_json['release']['manufacturer']
+        if 'model' not in facts:
+            if 'release' in system_board_json:
+                facts['model'] = system_board_json['release']['product'] + " v" + system_board_json['release']['hwrev']
 
-        """ 
-        Get the Opuntia / Openwrt Interface list  
-        Note. This is the list of interfaces configured in the uci system and not 
-        the Linux interfaces that might be present at the Linux kernel level. 
-        """
-        output = self.device.send_command('ubus list network.interface.*')
+        #Get the Opuntia / Openwrt Interface list  
+        networklist = self.device.send_command('ubus list network.interface.*')
 
         interface_list = list()
 
-        for line in output.splitlines():
+        for line in networklist.splitlines():
             interface_list.append((line.split('.')[2]))
 
         facts['interface_list'] = interface_list
@@ -186,13 +190,13 @@ class ImageStreamDriver(NetworkDriver):
     def get_interfaces(self):
         interfaces = {}
 
-        output = self.device.send_command('ubus list network.interface.*')
+        networklist = self.device.send_command('ubus list network.interface.*')
 
         # This gets us ALL of the interface stats at the linux level for all devices
         dev_status = self.device.send_command('ubus call network.device status \' { "none" : "none" } \'')
         dev_status_json = json.loads(dev_status)
 
-        for line in output.splitlines():
+        for line in networklist.splitlines():
             interface = {}
             # Gives us the interface name 
             interface_name = line.split('.')[2]
@@ -502,8 +506,8 @@ class ImageStreamDriver(NetworkDriver):
 
         candidate = [line for line in candidate if line]
         for uci_command in candidate:
-            output = self.send_command(uci_command)
-            if "error" in output or "not found" in output:
+            command = self.send_command(uci_command)
+            if "error" in command or "not found" in command:
                 raise MergeConfigException("Uci Command '{0}' cannot be applied.".format(uci_command))
 
     def discard_config(self):
