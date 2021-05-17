@@ -169,11 +169,13 @@ class ImageStreamDriver(NetworkDriver):
             if 'release' in system_board_json:
                 facts['os_version'] = system_board_json['release']['version'] + " " + system_board_json['release']['revision']
         if 'vendor' not in facts:
-            if "manufacturer" in system_board_json['release'].keys() and system_board_json['release']['manufacturer']:
-                facts['vendor'] = system_board_json['release']['manufacturer']
+            if 'release' in system_board_json:
+                if "manufacturer" in system_board_json['release'].keys() and system_board_json['release']['manufacturer']:
+                    facts['vendor'] = system_board_json['release']['manufacturer']
         if 'model' not in facts:
             if 'release' in system_board_json:
-                facts['model'] = system_board_json['release']['product'] + " v" + system_board_json['release']['hwrev']
+                if 'product' in system_board_json['release'].keys() and 'hwrev' in system_board_json['release'].keys():
+                    facts['model'] = system_board_json['release']['product'] + " v" + system_board_json['release']['hwrev']
 
         #Get the Opuntia / Openwrt Interface list  
         networklist = self.device.send_command('ubus list network.interface.*')
