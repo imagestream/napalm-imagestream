@@ -10,7 +10,7 @@ fortune.
 Completion status:
 - [x] is_alive
 - [ ] load_replace_candidate
-- [?] load_merge_candidate
+- [ ] load_merge_candidate
 - [x] compare_config 
 - [x] commit_config
 - [x] discard_config
